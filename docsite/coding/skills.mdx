@@ -1,0 +1,73 @@
+---
+title: "Skills"
+description: "The skill library fairmind-coding ships: workflow skills, the gate layer, ticket compilation, the brain skills, and the decisions review."
+keywords: ["skills", "progressive disclosure", "tdd", "code review", "gate", "requirements", "brain"]
+---
+
+Skills are written conventions that load when the work matches them. They put the same guidance in front of the agent on every run, instead of relying on it being remembered.
+
+## Workflow skills
+
+| Skill | When it loads |
+|---|---|
+| `fairmind-context` | Starting any Fairmind development work — pulls project, session, user story, task plan, requirements, test expectations, and related documents |
+| `fairmind-tdd` | Implementing against Fairmind acceptance criteria, with journal traceability |
+| `fairmind-code-review` | Reviewing implementation work — plan to journal to code traceability, requirements verification, cross-repository integration checks |
+
+## The gate layer
+
+| Skill | When it loads |
+|---|---|
+| `fairmind-gate` | Designing a loop-mode stop condition: the five check types, descriptor specification, RED-first authoring, and admission |
+| `custom-check-authoring` | A criterion the five built-in types do not cover, needing a custom check and its admission self-test |
+| `task-compilation` | Classifying an external ticket's acceptance criteria into check types for `/loop-import`, resolving ambiguity by interview rather than by guessing |
+
+See [Loop mode](/coding/loop-mode) for what these three build.
+
+## Working with the brain
+
+These skills work against the requirements, decisions and history your Fairmind project
+already holds, rather than against the repository alone.
+
+| Skill | When it loads |
+|---|---|
+| `brain-rebuild-requirements` | Recovering the functional and technical requirements of a system that already exists — module by module, from the ingested code and what the project records about it, each draft carrying at least one code anchor, plus a coverage read on what nothing explains |
+| `brain-new-requirement` | Turning an idea into a need, user stories and requirements after looking for precedents — including the ones that were retired or superseded, when that happened and why |
+| `brain-add-document` | Filing a document the brain can cite, with a summary the agent writes because this door runs no model |
+| `brain-record-decision` | Recording, when you ask for it, a decision taken in the session, an issue found and left for later, or the replacement of a decision the project already holds — after looking for the same or a competing one, and showing you the draft before anything is sent |
+| `brain-onboard` | Starting on a project you do not know: its brief in one call, then the why behind each file you open — or, when asked, writing or regenerating that brief from what the brain holds |
+| `brain-impact` | Working out what a change touches before it is made — the code a requirement or an idea anchors on, what uses that code, the architecture components involved and the ones that depend on them where the platform models components, and the decisions, incidents and test criteria already recorded there |
+| `brain-extract-components` | Turning a blueprint the brain already holds into the components it names — responsibility, layer, technology, the directories that implement each, and what each belongs to and depends on — when you ask, after showing you the draft |
+
+`brain-rebuild-requirements`, `brain-new-requirement` and `brain-record-decision` record their
+output as **proposals**. Nothing any of them does confirms a requirement, a decision or an issue:
+a person confirms or rejects each one, and reruns converge on the same records rather than
+duplicating them. `brain-extract-components` works the same way for components: each
+lands as a proposal, a rerun over the same blueprint lands on the same records, a component
+a person rejected or retired stays closed, and a component that looks like one already
+recorded is reported for a person to decide rather than merged.
+`brain-add-document` is different in kind: it files a document rather than
+proposing one. `brain-onboard` reads by default and writes nothing; asked to write the
+brief, it records it as a proposal and shows what changed against the confirmed version.
+`brain-impact` records nothing: its answer is a report, and
+`brain-new-requirement` calls it to ground its drafts. It follows the uses of code the platform
+has indexed, not the paths a request takes at run time, and its report says so on its first
+line. For what each skill sends to the platform, see
+[What leaves your machine](/coding/data-flow).
+
+<Note>
+They need [connected mode](/coding/connected-mode) — run `/fairmind-connect` once per
+checkout first. Standalone there is nothing to read from, so they stop and say so instead of
+degrading. They also need a platform release that serves the brain tools; when it does not,
+they name the release and stop.
+</Note>
+
+## Loading a skill deliberately
+
+Skills load on their own when the work matches the description in the table above — that is the point of writing the description carefully. To force one, name it in the request:
+
+```text
+Use the fairmind-gate skill to define the stop condition for this task
+```
+
+A skill announces itself when it loads, so you can tell which guidance is in play.

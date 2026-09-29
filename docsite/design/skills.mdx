@@ -1,0 +1,30 @@
+---
+title: "Skills"
+description: "The four reference skills fairmind-design ships, and when each one loads."
+keywords: ["skills", "design tokens", "wcag reference", "figma mcp", "claude.md template"]
+---
+
+Four reference skills. They load when the work matches them, and each is the written source the corresponding agent is checking against.
+
+| Skill | When it loads |
+|---|---|
+| `design-token-conventions` | Authoring or auditing CSS, SCSS, or Tailwind code that touches color, spacing, typography, radius, shadow, or border |
+| `wcag-quick-reference` | Interpreting an audit finding, planning a fix, or deciding whether a behavior meets AA |
+| `figma-mcp-workflow` | Pulling design context, screenshots, variables, or Code Connect data from a Figma source |
+| `fairmind-design-claude-md` | Bootstrapping a project's `CLAUDE.md`, or refreshing it after the design system evolves |
+
+## design-token-conventions
+
+Defines the primitive-versus-semantic split, the file layout tokens live in, and the anti-patterns `fairmind-token-analyzer` flags. Load it before writing the first line of styling on a new component — it is cheaper than having the analyzer find the hardcoded value later.
+
+## wcag-quick-reference
+
+Carries the criterion text, the common failures, and the recommended fix for each WCAG 2.1 success criterion the accessibility agents cite. It is what turns a finding that names a criterion number into something actionable.
+
+## figma-mcp-workflow
+
+Covers URL parsing, which Figma MCP tool to reach for, and the Code Connect mapping flow. Load it when a Figma URL is involved and the right tool is not obvious.
+
+## fairmind-design-claude-md
+
+Ships a copy-paste template at `templates/CLAUDE.md.example`. Start there when bootstrapping a project, or when the compliance checker keeps flagging rules that were never written down — an undocumented rule cannot be verified, which is what that flag means.

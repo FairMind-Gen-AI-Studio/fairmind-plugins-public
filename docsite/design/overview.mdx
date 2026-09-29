@@ -1,0 +1,66 @@
+---
+title: "fairmind-design"
+sidebarTitle: "Overview"
+description: "A design and accessibility toolkit for Claude Code: ten subagents, four orchestration commands, and four reference skills, built on the Figma and Playwright MCP servers."
+keywords: ["fairmind-design", "figma", "design tokens", "accessibility", "wcag", "code connect"]
+---
+
+`fairmind-design` closes the gap between a design and the code that claims to implement it. It compares components against their Figma source value by value, enforces semantic design tokens over hardcoded values, maintains Code Connect mappings, and audits accessibility against WCAG 2.1 AA.
+
+<Warning>
+Most of this plugin needs the **Figma** or **Playwright** MCP server, and an agent whose server is absent fails at its first call. Three of the ten make no MCP call at all — the token analyzer, the composition reviewer, and the compliance checker — so a token audit and `/design-task-close` work with neither configured. See [Requirements](/requirements).
+</Warning>
+
+## What it does
+
+- Verifies a React component matches its Figma source, value by value and state by state
+- Enforces semantic design tokens and flags hardcoded colors, spacing, and typography
+- Generates and maintains Figma Code Connect mappings — `*.figma.tsx`
+- Runs full WCAG 2.1 AA audits covering contrast, keyboard, screen reader, and ARIA, through Playwright and axe-core
+- Reviews component composition: design-system reuse, prop typing, HTML semantics
+- Closes a design task with a mandatory project compliance check
+
+## The pieces
+
+<Columns cols={3}>
+  <Card title="Commands" icon="terminal" href="/design/commands">
+    Four orchestration entry points, from single-component verification to a full accessibility audit.
+  </Card>
+  <Card title="Agents" icon="users" href="/design/agents">
+    Ten subagents: five for design fidelity, and five for accessibility — four specialists behind an orchestrator.
+  </Card>
+  <Card title="Skills" icon="book-open" href="/design/skills">
+    Four reference skills: token conventions, WCAG criteria, the Figma MCP workflow, and a CLAUDE.md template.
+  </Card>
+</Columns>
+
+## A typical pass
+
+<Steps>
+  <Step title="Verify the component against Figma">
+    ```text
+    /design-verify src/components/Button.tsx https://www.figma.com/design/abc/My-File?node-id=12-34
+    ```
+
+    A sequential gate: design verification, then token analysis, then composition review, then the project compliance check. It stops at the first failure unless you pass `--continue`.
+  </Step>
+  <Step title="Audit accessibility on the rendered page">
+    ```text
+    /a11y-audit http://localhost:3000/dashboard
+    ```
+
+    The orchestrator calls the four specialists, deduplicates their findings, and ranks by severity.
+  </Step>
+  <Step title="Keep the Figma mapping current">
+    ```text
+    /code-connect src/components/Button.tsx https://www.figma.com/design/abc/My-File?node-id=12-34
+    ```
+  </Step>
+  <Step title="Close the task">
+    ```text
+    /design-task-close
+    ```
+
+    Prints `READY TO PROCEED`, or `BLOCKED` with the steps to unblock.
+  </Step>
+</Steps>

@@ -1,0 +1,67 @@
+---
+title: "What leaves your machine"
+description: "The routes by which records can leave a machine running fairmind-coding, and where the authoritative account of each one lives."
+keywords: ["privacy", "data", "capture", "agentic insights", "ambient", "opt out"]
+---
+
+Connected mode is not only inbound. Records leave the machine by more than one route, and the routes are separate in every way that matters: different payloads, different doors, different preconditions, different controls.
+
+<Warning>
+This page names the routes and points at the authority. It deliberately does **not** restate what each one sends. A second copy of a disclosure claim drifts from the first, and the drifting copy is the one someone reads.
+</Warning>
+
+## The routes
+
+| Route | What it is |
+|---|---|
+| The **loop lane** | A flush of what a run leaves under `.fairmind/` |
+| The **ambient lane** | A per-session summary |
+| The **Studio write-back** | Not a capture lane: a per-task push of the run's journals |
+| The **brain write-back** | Not a capture lane: the requirement drafts, the document, the decisions, issues and replacements of decisions, or the components a blueprint names that a brain skill records when somebody runs one, the decisions and issues a loop proposes once you approve its human gate, and the decisions `/fairmind-sync-insights` proposes when somebody runs it |
+| The **agent signature** | Not a capture lane: an invisible marker, carrying the Claude Code session id, at the end of what a GitHub command posts on a pull request when you ask it to |
+The two lanes are not alternatives — one loop run can be captured by both, each on its own preconditions. The two write-backs fire only after a person asks: the Studio one on request, the brain one on a skill run by name, on your approval of a loop, or on a `/fairmind-sync-insights` run. Nothing said about one route holds for another, including when it fires and what has to be true first. The README states that per route; this page deliberately does not summarise it.
+
+The list is not closed with a count, and the README says why: it surveys what the plugin *declares*, and a route declared nowhere is a route that survey cannot see. The brain write-back is one such — a call a skill instructs carries no tool grant.
+
+## The authoritative account
+
+The full account — what each route sends, on which preconditions, which controls apply to it, and how that list was built — is in the plugin's own README, which is installed alongside the plugin:
+
+```text
+~/.claude/plugins/**/fairmind-coding/README.md  →  "What leaves your machine"
+```
+
+Every install carries that file, so the copy on your own machine is the one to read. Find it with:
+
+```bash
+find ~/.claude/plugins -path '*fairmind-coding/README.md'
+```
+
+Read it there rather than from a summary. It is written to be read in one place, and it states its own limits: it is a survey of what the plugin *declares*, not proof that nothing else sends, and it is deliberately not closed with a count.
+
+`INTERNALS.md`, installed in the same directory, carries the mechanics beneath it.
+
+## Switching a route off
+
+The ambient lane has a switch:
+
+```text
+/fairmind-config ambient off
+```
+
+<Warning>
+**The switch reaches the ambient lane and nothing else.** It is not a capture switch for everything: turning it off stops neither the loop lane nor either write-back.
+
+The Studio write-back has no switch: it fires because a person asked for it. The brain write-back has one — `brain` — because half of it now fires on a loop's human gate rather than on a skill somebody named. What that switch does and does not stop is stated in the README, not here.
+</Warning>
+
+Two things are worth knowing before you rely on the ambient switch.
+
+**One of the gates protects only the unconnected.** Without a per-project Fairmind MCP configured for this repository, the `SessionStart` gate captures nothing regardless of any file — which is worth knowing, and is also the case that does not apply to anyone reading this page because they *are* connected. It is one gate of three, not a default.
+
+**A central platform setting wins over a local one.** Where a Fairmind project has forced a feature, `/fairmind-config` refuses the local write rather than pretending to make it. See [Configuration](/coding/configuration).
+
+## What a switch does not do
+
+- **It is not a deletion promise.** Turning a switch off stops future sending. It does not reach back into what was already delivered, and what happens to a record after it arrives is decided elsewhere.
+- **It is not enforcement.** A client-side switch cannot stop someone disabling the plugin. It expresses a decision; it does not police one.

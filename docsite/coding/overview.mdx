@@ -1,0 +1,125 @@
+---
+title: "fairmind-coding"
+sidebarTitle: "Overview"
+description: "A coding workflow plugin for Claude Code: six role-based agents, a skill library, lifecycle hooks, and 19 commands, with an opt-in loop mode driven by an executed gate."
+keywords: ["fairmind-coding", "agents", "loop mode", "gate", "claude code plugin"]
+---
+
+`fairmind-coding` turns a Claude Code session into a workflow with named roles, written conventions, and enforcement at the turn boundary. It runs standalone on any repository with no configuration. The Fairmind MCP server and a `.fairmind/` session workspace are optional, and only open [connected mode](/coding/connected-mode).
+
+<Columns cols={2}>
+  <Card title="Start here" icon="play" href="/coding/commands#fairmind-coding">
+    `/fairmind-coding` is the front desk. It offers the headline jobs as a menu and launches the one you pick.
+  </Card>
+  <Card title="Loop mode" icon="repeat" href="/coding/loop-mode">
+    The flagship: a machine-checkable stop condition, authored by someone other than the maker, executed on every turn.
+  </Card>
+</Columns>
+
+## The pieces
+
+| Layer | What it does | Reference |
+|---|---|---|
+| Agents | Six roles, each with its own remit and journal | [Agents](/coding/agents) |
+| Skills | Written conventions loaded per task | [Skills](/coding/skills) |
+| Hooks | Enforcement and capture at lifecycle points | [Hooks](/coding/hooks) |
+| Commands | 20 entry points, from the front desk to PR helpers | [Commands](/coding/commands) |
+
+## How Fairmind stacks the loops
+
+Fairmind models agent-driven delivery as a foundation plus four concentric loops, each with its own exit condition and time scale. This plugin operates the two innermost loops, which run inside Claude Code. The outer two and the foundation live on the Fairmind platform.
+
+```text
+0 · FOUNDATION   Evidence Collection: code · logs · DB · UI  →  Project Context
+                 runs once, up front — feeds every loop below
+
+┌─ 4 · OPTIMIZE ── Conductor · Optimize ───────────────────────────────────────────────┐
+│                                         exit: agent-ready codebase · every N sprints │
+│ ┌─ 3 · SPRINT ── Agile Studio → Working Session ───────────────────────────────────┐ │
+│ │                                            exit: Working Session closed · ≈ days │ │
+│ │ ┌─ 2 · TASK ── Claude Code + verifier agents ──────────────────────────────────┐ │ │
+│ │ │ ◀ you are here: /fairmind-loop       exit: gate green, you approve · ≈ hours │ │ │
+│ │ │ ┌─ 1 · AGENT TURN ── the harness ──────────────────────────────────────────┐ │ │ │
+│ │ │ │ ◀ hooks · skills · subagents             exit: turn complete · ≈ minutes │ │ │ │
+│ │ │ │ [implement] → [hooks + skills guide the turn] → [second opinion] → close │ │ │ │
+│ │ │ └──────────────────────────────────────────────────────────────────────────┘ │ │ │
+│ │ └──────────────────────────────────────────────────────────────────────────────┘ │ │
+│ └──────────────────────────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+● design-time on FairMind: 0 · 3 · 4            ● runtime in Claude Code: 1 · 2
+```
+
+<AccordionGroup>
+  <Accordion title="0 · Foundation — Project Context">
+    Evidence collection over code, logs, database, and UI builds the project context once, up front. A loop iterating on the wrong context converges on the wrong answer. Connected mode pulls that context through the Fairmind MCP with the `fairmind-context` skill; standalone mode approximates it from the local repository.
+  </Accordion>
+  <Accordion title="1 · Agent turn — the harness (≈ minutes)">
+    The plugin configures the turn itself. Hooks fire at lifecycle points, skills put written conventions in front of the agent on every run, and a subagent supplies the second opinion — the writer never approves their own work.
+  </Accordion>
+  <Accordion title="2 · Task — the loop (≈ hours)">
+    `/fairmind-loop` drives this one. Exit turns on two questions, neither of them the maker's to answer, and **the engine gates on both**:
+
+    - The **binary oracle** — the executed gate. Acceptance checks pass or fail with no interpretation. It answers *does it work?*
+    - The **completeness check** — *is this the right work?* Green K consecutive times no longer closes a loop on its own: it holds at `running` until a reviewer who owns no check in the contract records a verdict, read against the **design brief** rather than the contract.
+
+    <Warning>
+    What the engine proves about the second is narrower than that it was done well: that a verdict was recorded, by a non-maker role, against a harness-written attestation, for the tree that is actually there. It cannot prove the reviewer reasoned well — so the **final human gate stays load-bearing**.
+    </Warning>
+  </Accordion>
+  <Accordion title="3 · Sprint — Working Session (≈ days)">
+    Agile Studio designs the sprint — needs, stories, tasks, acceptance tests — into a Working Session. Closing it is the exit condition.
+  </Accordion>
+  <Accordion title="4 · Optimization (every N sprints)">
+    Conductor's Optimize measures how agent-ready the codebase is and turns its recommendations into next-sprint tasks. The outer loop feeds the inner ones.
+  </Accordion>
+</AccordionGroup>
+
+Every loop, at every scale, is built from the same six pieces: a **trigger** (the beat), a **worktree** (isolation), **skills** (written context), **MCP connectors** (reach), a **second opinion** (the verifier), and **state on disk** (memory between runs).
+
+## The workspace contract
+
+The plugin assumes a session workspace rooted at `.fairmind/`:
+
+```text
+.fairmind/
+  active-context.json             { mode, fairmind, project, base_path, task_ref }
+                                  + decisions_start_line, the line count of
+                                    insights/decisions.jsonl when the run opened
+                                    (0 when empty); absent = flush unattributed
+                                  + once /fairmind-connect has run: project_id,
+                                    repository_id, repository_name,
+                                    repository_branch, repository_url, bound_at
+  <project-slug>/<session-slug>/
+    work_packages/
+      ai/      backend/      frontend/      qa/
+    journals/
+```
+
+The Technical Lead creates this on first run. Every other agent reads `active-context.json` to resolve `FAIRMIND_BASE`, and writes only to scoped subpaths — the `validate-fairmind-path` hook refuses anything outside that scope.
+
+## Examples
+
+<Tabs>
+  <Tab title="Start a task">
+    Engage the Technical Lead first. It pulls the work package and bootstraps `.fairmind/`:
+
+    ```text
+    Technical Lead, prepare the work package for user story FM-1234
+    ```
+  </Tab>
+  <Tab title="Fix an issue">
+    ```text
+    /fix-issue auth-login-broken
+    ```
+
+    The orchestrator reads the issue file under `./issues/`, classifies it as frontend, backend, or mixed, confirms with you, then dispatches the Software Engineer.
+  </Tab>
+  <Tab title="Clean up SonarCloud">
+    ```text
+    /sonarqube-fix
+    ```
+
+    Pulls the PR-scoped issues, fixes them from BLOCKER down to INFO, runs the test suite, and commits.
+  </Tab>
+</Tabs>

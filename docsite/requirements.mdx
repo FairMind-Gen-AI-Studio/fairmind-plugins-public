@@ -1,0 +1,49 @@
+---
+title: "Requirements"
+description: "What each plugin needs on your machine, which MCP servers are optional, and how each plugin behaves when a dependency is absent."
+keywords: ["prerequisites", "mcp", "figma", "playwright", "mongodb", "python3", "gh cli"]
+---
+
+The two plugins have deliberately different dependency profiles. `fairmind-coding` treats every MCP server as optional. `fairmind-design` needs Figma or Playwright for most of its work, though three of its agents use neither.
+
+## fairmind-coding
+
+**Required.** `python3` 3.9 or newer, `git`, and `bash` on `$PATH`. The gate engine, its test suite, and the hooks are stdlib-only, with no third-party packages. The `python3` macOS ships is enough; an older one is reported in one line when a session starts.
+
+**Required once a `.fairmind/` workspace exists.** `jq` — see the warning below. Outside a workspace it is not needed at all, which is why it is easy to get caught out by.
+
+**Optional.** Each of these opens a workflow rather than gating the plugin:
+
+| Dependency | What it enables | Absent |
+|---|---|---|
+| Fairmind MCP (`mcp__Fairmind__*`) | Platform context: projects, stories, requirements, tests, retrieval | Agents read the local `.fairmind/` files and run standalone |
+| Playwright MCP | The QA Engineer's browser runs and `/fix-frontend-issue` | Those workflows are unavailable; the rest is unaffected |
+| MongoDB MCP | Software Engineer and Code Reviewer work on NextJS/MongoDB stacks | Those workflows are unavailable |
+| `gh` CLI | The GitHub commands | Those commands fail; nothing else is affected |
+| `SONAR_TOKEN` and `sonar-project.properties` | `/sonarqube-fix` | That command cannot run |
+
+<Check>
+An absent MCP server degrades to standalone behavior. Absence of Fairmind is a mode, not an error — see [Standalone and connected mode](/coding/connected-mode).
+</Check>
+
+<Warning>
+**Why `jq` moves from unnecessary to required.** Inside a Fairmind workspace three hooks refuse rather than skip when it is missing: `validate-fairmind-path` will not let a `Write` or `Edit` through, `check-journal` will not let a subagent finish, and `inject-context` will not dispatch one. Each says so on stderr and names the install command. The reasoning is deliberate — an unchecked write, or a silently skipped journal rule, would be worse than stopping — but it means **`jq` is effectively required once `.fairmind/` exists**, and the path guard makes that the point where editing stops. Outside a workspace all three are silent no-ops.
+</Warning>
+
+## fairmind-design
+
+Requirements here are **per workflow**, not per plugin:
+
+| Dependency | Needed by |
+|---|---|
+| Figma MCP (`mcp__claude_ai_Figma__*`) | Design verification, Code Connect generation, color contrast |
+| Playwright MCP (`mcp__plugin_playwright_playwright__*`) | All four accessibility specialists |
+| Neither | Token analyzer, composition reviewer, CLAUDE.md compliance checker |
+
+An agent whose MCP server is absent fails at its first call. The three in the last row have no MCP tools at all, so `/design-task-close` and a token audit work on a machine with neither server configured — while `/design-verify` and `/a11y-audit` do not.
+
+## Authenticating MCP servers
+
+Nothing in the marketplace configures an MCP server for you. Authenticate each one once in Claude Code's MCP settings.
+
+For `fairmind-coding`, [`/fairmind-connect`](/coding/connected-mode) then *verifies* that setup rather than performing it: it checks the per-project MCP entry and key, pre-flights the tenant, binds the checkout to the repository the platform ingested, and prints the line to run when something is wrong. It never edits your MCP configuration.

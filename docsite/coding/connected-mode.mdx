@@ -1,0 +1,70 @@
+---
+title: "Standalone and connected mode"
+description: "The plugin runs with zero MCP servers. Connected mode adds platform context and platform routes — what changes, and how to establish it."
+keywords: ["standalone", "connected mode", "fairmind mcp", "fairmind-connect", "repository binding"]
+---
+
+The plugin installs and runs with **zero MCP servers**. Connectivity is a mode, not a prerequisite — and the absence of Fairmind is never an error.
+
+## Standalone mode
+
+The default when no Fairmind workspace is present. The Technical Lead bootstraps a minimal `.fairmind/active-context.json`, asks once whether a Fairmind workspace exists, and drives everything from local files: contracts, `loop-state.json`, journals.
+
+Everything that makes [loop mode](/coding/loop-mode) meaningful works here — the executed gate, admission, the budget, and the final human gate — with nothing but `git`, `python3`, and `bash`.
+
+## Connected mode
+
+Recorded as `fairmind: "configured"` in `active-context.json`, and established by `/fairmind-connect` rather than asserted by hand. It adds:
+
+- **Platform context** through the Fairmind MCP: projects, stories, requirements, tests, and retrieval, pulled by the `fairmind-context` skill.
+- **Outbound routes** — connected mode is not only inbound. See [What leaves your machine](/coding/data-flow).
+
+Every agent degrades gracefully: an absent MCP tool means it reads the local equivalent and carries on.
+
+<Note>
+**Playwright and MongoDB are not part of this mode.** They are independent optional MCP servers — the QA Engineer's browser runs and the MongoDB-stack workflows work with or without Fairmind connected, and connecting Fairmind does not enable them. Only the Fairmind MCP decides standalone versus connected.
+</Note>
+
+## Connecting a checkout
+
+```text
+/fairmind-connect
+```
+
+The command *verifies* rather than configures. It:
+
+1. Checks that a per-project Fairmind MCP entry exists and that its key resolves.
+2. Pre-flights the tenant.
+3. Binds this checkout to the repository the platform ingested.
+4. Reports what is wrong and prints the exact line to run.
+
+<Warning>
+`/fairmind-connect` never edits your MCP configuration. Authenticate the MCP servers once in Claude Code's MCP settings; the command tells you what is missing, and you apply it.
+</Warning>
+
+## Why binding matters
+
+Until a checkout is bound, every lane identifies it by its folder name — which is local, ambiguous across machines, and unrelated to the repository the platform actually ingested. Binding writes the platform's own identifiers into `active-context.json`:
+
+```json
+{
+  "project_id": "…",
+  "repository_id": "…",
+  "repository_name": "…",
+  "repository_branch": "…",
+  "repository_url": "…",
+  "bound_at": "…"
+}
+```
+
+From that point the repository is named by what the platform knows it as, not by where you happened to clone it.
+
+## Which mode am I in
+
+```text
+/fairmind-connect
+```
+
+It reports what resolves and what does not. The recorded answer is the `fairmind` key in `.fairmind/active-context.json` — `"configured"` is connected mode.
+
+`/fairmind-config` is a different question: it reports the **policy** for the brain write-back and ambient capture, not whether the platform is reachable. See [Configuration](/coding/configuration).

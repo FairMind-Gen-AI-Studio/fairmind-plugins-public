@@ -1,0 +1,31 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "fairmind-plugins",
+  "description": "Fairmind plugins marketplace for Claude Code. Ships fairmind-design (design and accessibility toolkit) and fairmind-coding (Fairmind coding workflow with role-based agents, a skill library, and journal-enforcement hooks).",
+  "owner": {
+    "name": "Fairmind"
+  },
+  "metadata": {
+    "version": "0.2.115"
+  },
+  "plugins": [
+    {
+      "name": "fairmind-design",
+      "description": "Ten design and accessibility subagents (design verification, token analyzer, Code Connect generator, WCAG/contrast/keyboard/screen-reader auditors, composition reviewer, CLAUDE.md compliance checker), four orchestration commands, and four reference skills. Requires Figma and Playwright MCP servers.",
+      "category": "design",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/FairMind-Gen-AI-Studio/fairmind-design.git"
+      }
+    },
+    {
+      "name": "fairmind-coding",
+      "description": "Fairmind coding workflow: 6 role-based agents (Technical Lead, Software Engineer, Code Reviewer, QA Engineer, Debugging Specialist, Security Engineer), a skill library (the Fairmind context and TDD workflow, plan-to-code review, the gate layer, ticket compilation, an advisory decisions review, two brain skills that recover or draft requirements from what a project already holds, one that files a document the brain can cite, one that records a decision, an issue or the replacement of a decision when a person asks, one that reads a project's brief at the start of a session or writes it as a proposal, one that traces what a change touches, and one that turns a filed blueprint into proposed architecture components), hooks (workspace, ambient insight-capture, and command-opening banners), and 19 commands (fairmind-coding front desk, fairmind-loop, fairmind-develop, loop-import, fairmind-add-check, harness-audit, fairmind-sync-insights, fairmind-config, fix-issue, fix-frontend-issue, sonarqube-fix, report, make-tests, de-slop, gh-* helpers). Includes a loop mode with an executed, machine-checkable gate. Runs standalone on any repo; Fairmind, Playwright, and MongoDB MCP are optional (connected mode).",
+      "category": "development",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/FairMind-Gen-AI-Studio/fairmind-coding.git"
+      }
+    }
+  ]
+}

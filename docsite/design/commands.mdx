@@ -1,0 +1,51 @@
+---
+title: "Commands"
+description: "The four orchestration commands fairmind-design adds to Claude Code."
+keywords: ["design-verify", "a11y-audit", "code-connect", "design-task-close"]
+---
+
+Four commands, each orchestrating one or more of the [agents](/design/agents).
+
+### design-verify
+
+```text
+/design-verify <component-path> <figma-url> [--continue] [--threshold=N]
+```
+
+A sequential gate over four agents, in order: design verification, token analyzer, composition reviewer, then the project compliance check. It **stops at the first failure** so you fix one class of problem at a time; `--continue` runs the whole chain regardless.
+
+Use it whenever a component is created or visually changed.
+
+### a11y-audit
+
+```text
+/a11y-audit <component-path-or-url> [--standard=AA|AAA]
+```
+
+A full accessibility audit through the orchestrator, which fans out to the WCAG, contrast, keyboard, and screen-reader specialists, deduplicates their findings, and returns a single report ranked by severity. Defaults to WCAG 2.1 AA.
+
+Accepts either a component path or a live URL — the specialists that need a rendered page drive it through Playwright.
+
+### code-connect
+
+```text
+/code-connect <component-path> <figma-url>
+```
+
+Generates or updates the component's `.figma.tsx` Code Connect mapping. Where a mapping already exists it validates that it still matches the Figma source, shows a unified diff, and then **applies it** — the diff is there for you to read, not a dry run. Commit before running it on a mapping you have hand-edited.
+
+Run it when a component is created, when its variants change, or when its Figma source is restructured.
+
+### design-task-close
+
+```text
+/design-task-close [task-description]
+```
+
+The mandatory closing step. It reads the rules declared in the project's `CLAUDE.md` and checks the work against them, printing `READY TO PROCEED` or `BLOCKED` with the steps to unblock.
+
+It reviews **process conformance, not code quality**. The other three commands cover the code.
+
+<Note>
+It works from what is on disk — it has `Read`, `Grep`, and `Glob`, and no execution record. So it can tell you a rule's *evidence* is missing, and it cannot tell you an agent was never invoked. Treat `READY TO PROCEED` as "nothing on disk contradicts the rules", not as proof the workflow ran.
+</Note>

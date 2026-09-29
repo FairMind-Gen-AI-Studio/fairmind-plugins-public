@@ -1,0 +1,180 @@
+---
+title: "Commands"
+description: "The slash commands fairmind-coding adds to Claude Code, grouped by the job they do."
+keywords: ["commands", "slash commands", "fairmind-loop", "harness-audit", "fix-issue", "sonarqube"]
+---
+
+Every command below is available once the plugin is installed. `/fairmind-coding` is the front desk: it menus the headline jobs and launches the one you pick, so it is the only entry point you need to remember.
+
+## Getting around
+
+### fairmind-coding
+
+```text
+/fairmind-coding [job|ref]
+```
+
+The front desk. Prints the banner, offers the headline jobs — loop mode, develop with the team, import a ticket, harness audit — as a menu, and runs the command you pick in the current session. Type anything else to reach the rest of the toolkit. Passing a named job or a bare task ref skips the menu.
+
+## Running a task
+
+### fairmind-loop
+
+```text
+/fairmind-loop [ref]
+```
+
+Runs a task or story in [loop mode](/coding/loop-mode). The Technical Lead builds a machine-checkable stop condition, then the executed gate drives implement → verify → iterate under a budget you confirmed, until the gate passes and a human approves.
+
+### fairmind-develop
+
+```text
+/fairmind-develop <US-ref|TASK-ref>
+```
+
+Implements a story — every task under it, in roadmap order — or a single task with the full team, human-driven. The Technical Lead plans, you confirm the order, then engineer, QA, and review run task by task. Connected mode only, and there is no executed gate; `/fairmind-loop` is the gated twin.
+
+### loop-import
+
+```text
+/loop-import [gh-issue|ticket-file|clickup-task.json]
+```
+
+Turns an external ticket into a compiled loop-mode contract. Detects the input form, classifies the acceptance criteria with the `task-compilation` skill, compiles and emits through `loop_import.py`, presents the gap report, then hands off to `/fairmind-loop` to arm.
+
+### fairmind-add-check
+
+```text
+/fairmind-add-check
+```
+
+Authors a custom loop-mode check for a criterion the five built-in types do not cover. Interviews the scenario, emits an open-contract descriptor, and runs the admission self-test that verifies the verifier before the check is allowed to gate anything.
+
+## Assessing a repository
+
+### harness-audit
+
+```text
+/harness-audit [--test-command "<cmd>"]
+```
+
+Audits the current repository against the Loop Readiness criteria catalog — 81 criteria across 9 pillars and 5 Loop Readiness dimensions — and renders a self-contained HTML report under `.fairmind/audit/`. When Fairmind is connected, the run is also flushed to Agentic Insights.
+
+## Connecting and configuring
+
+### fairmind-connect
+
+```text
+/fairmind-connect
+```
+
+Connects the checkout to its Fairmind project: verifies the per-project MCP entry and the key, pre-flights the tenant, and binds the repository to the one the platform ingested, so every lane stops identifying it by its folder name. It reports what is wrong and prints the line to run; it never edits your MCP configuration itself.
+
+### fairmind-config
+
+```text
+/fairmind-config [brain|ambient on|off|unset]
+```
+
+Shows or changes this repository's plugin policy — the brain write-back at a loop's human gate and ambient session capture. With no argument it reports the effective state per feature, which layer decided it, and how fresh the policy cache is. See [Configuration](/coding/configuration).
+
+### fairmind-sync-insights
+
+```text
+/fairmind-sync-insights
+```
+
+Flushes any unflushed Agentic Insights payloads — loop stats, agent decisions, harness-audit runs — to the platform, and any architecture decisions not yet proposed to the company brain, on demand and independently of a loop close.
+
+## Fixing and migrating
+
+### fix-issue
+
+```text
+/fix-issue [issue-name] [--type fe-fe|fe-be|be-be]
+```
+
+Reads the issue file under `./issues/`, classifies it as frontend, backend, or mixed, confirms the classification with you, then dispatches the Software Engineer.
+
+### fix-frontend-issue
+
+```text
+/fix-frontend-issue [issue-file]
+```
+
+A frontend fix loop validated with Playwright, capped at five iterations. Reads optional project directives from `./.claude/directive/*.md`.
+
+### sonarqube-fix
+
+```text
+/sonarqube-fix
+```
+
+Pulls the SonarCloud issues scoped to the current PR, fixes them from BLOCKER down to INFO, runs the test suite, and commits. Needs `SONAR_TOKEN` and a `sonar-project.properties` file.
+
+## Working with the code
+
+### make-tests
+
+```text
+/make-tests
+```
+
+Collaborative test creation driven by coverage analysis. Reads the implementation, finds the existing test patterns, runs coverage to see what is uncovered, and discusses what to write before writing it. Defaults to pytest.
+
+### de-slop
+
+```text
+/de-slop
+```
+
+Strips AI-generated artifacts before a PR goes up. Scans the diff against the base branch or a named PR for throwaway markdown files, redundant comments, and similar residue. Always dry-runs first — `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, and `docs/` are never touched.
+
+### report
+
+```text
+/report [report-type] [options]
+```
+
+Generates reports on task execution, progress, and metrics for project management and sprint reviews. Supports an executive summary, a sprint report, and a standup format.
+
+## GitHub workflow
+
+### gh-commit
+
+```text
+/gh-commit
+```
+
+Creates well-organized conventional commits. Checks the branch first and refuses to commit to `main` or `master`, offering to create a feature branch instead.
+When you ask for the pull request, it drafts the title and description, shows them, and opens it once you confirm.
+
+### gh-fix-ci
+
+```text
+/gh-fix-ci
+```
+
+Detects the CI context for the current branch — PR checks where a PR exists, workflow runs otherwise — fetches the failing logs, analyzes them, and applies fixes.
+
+### gh-review-pr
+
+```text
+/gh-review-pr [pr-number|url]
+```
+
+A structured PR review. Gathers the metadata, diff, and both comment channels through the GitHub CLI, then works through the changes and the discussion to produce actionable feedback.
+When you ask, it posts the review you confirmed on the pull request.
+
+### gh-address-pr-comments
+
+```text
+/gh-address-pr-comments [pr-number]
+```
+
+Interactive PR comment resolution. Fetches review comments and issue comments, filters to the actionable ones, categorizes them as code, style, docs, test, or question, and walks you through applying fixes.
+When you ask, it replies to what it addressed — in the review comment's own thread, or with one comment on the pull request for a conversation comment.
+
+### Signed posts
+
+The three commands above that post on a pull request sign what they post: the text ends in an invisible marker naming the agent and the session that wrote it, so text an agent posted with your account can be told from text you wrote. The format, the regex that parses it and what the marker does not prove are in the plugin README, under "Agent signature on pull requests", installed alongside the plugin. What the marker discloses is listed with the other routes in [What leaves your machine](/coding/data-flow).
