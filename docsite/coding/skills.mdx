@@ -1,0 +1,80 @@
+---
+title: "Skills"
+description: "The skill library fairmind-coding ships: workflow skills, the gate layer, ticket compilation and the brain skills."
+keywords: ["skills", "progressive disclosure", "tdd", "code review", "gate", "requirements", "brain"]
+---
+
+Skills are written conventions that load when the work matches them. They put the same guidance in front of the agent on every run, instead of relying on it being remembered.
+
+## Workflow skills
+
+| Skill | When it loads |
+|---|---|
+| `fairmind-context` | Starting any Fairmind development work — pulls project, session, user story, task plan, requirements, test expectations, and related documents |
+| `fairmind-tdd` | Implementing against Fairmind acceptance criteria, with journal traceability |
+| `fairmind-code-review` | Reviewing implementation work — plan to journal to code traceability, requirements verification, cross-repository integration checks |
+
+## The gate layer
+
+| Skill | When it loads |
+|---|---|
+| `fairmind-gate` | Designing a loop-mode stop condition: the five check types, descriptor specification, RED-first authoring, and admission |
+| `custom-check-authoring` | A criterion the five built-in types do not cover, needing a custom check and its admission self-test |
+| `task-compilation` | Classifying an external ticket's acceptance criteria into check types for `/loop-import`, resolving ambiguity by interview rather than by guessing |
+
+See [Loop mode](/coding/loop-mode) for what these three build.
+
+## Working with the brain
+
+These skills work against the requirements, decisions and history your Fairmind project
+already holds, rather than against the repository alone.
+
+| Skill | When it loads |
+|---|---|
+| `brain-rebuild-requirements` | Recovering the functional and technical requirements of a system that already exists — module by module, from the ingested code and what the project records about it, each draft carrying at least one code anchor, plus a coverage read on what nothing explains |
+| `brain-new-requirement` | Turning an idea into a need, user stories and requirements after looking for precedents — including the ones that were retired or superseded, when that happened and why |
+| `brain-add-document` | Filing a document the brain can cite, with a summary the agent writes because this door runs no model |
+| `brain-record-decision` | Recording, when you ask for it, a decision taken in the session, an issue found and left for later, or the replacement of a decision the project already holds — after looking for the same or a competing one, and showing you the draft before anything is sent |
+| `brain-onboard` | Starting on a project you do not know: its brief in one call, then the why behind each file you open — or, when asked, writing or regenerating that brief from what the brain holds |
+| `brain-impact` | Working out what a change touches before it is made — the code a requirement or an idea anchors on, what uses that code, the architecture components involved and the ones that depend on them where the platform models components, and the decisions, incidents and test criteria already recorded there |
+| `brain-extract-components` | Turning a blueprint the brain already holds into the components it names — responsibility, layer, technology, the directories that implement each, and what each belongs to and depends on — when you ask, after showing you the draft |
+| `brain-import-pull-requests` | Bringing a repository's merged and closed pull requests into the brain when you ask — each one's description, comments and review conversations, read with your own `gh` — so a read of a file returns the review conversations written on it |
+| `brain-seed` | Seeding a project's brain when you ask — the documents you name, as links with a summary the agent writes, the tracker tasks updated in the last 90 days and the merged and closed pull requests of the same window, read through the connections you already have. A re-run sends only what changed; what it sends is under [What leaves your machine](/coding/data-flow) |
+
+`brain-rebuild-requirements` and `brain-new-requirement` record their output as **proposals**,
+and `brain-record-decision` records an issue as a proposal. A person confirms or rejects each
+proposal, and reruns converge on the same records rather than duplicating them.
+`brain-record-decision` records a decision as **taken**: you stated it where you took it, so it
+lands confirmed and changes only by being replaced. `brain-extract-components` works the same way for components: each
+lands as a proposal, a rerun over the same blueprint lands on the same records, a component
+a person rejected or retired stays closed, and a component that looks like one already
+recorded is reported for a person to decide rather than merged.
+`brain-add-document` files a document as a proposal too: it waits in the review queue
+until a person confirms it. `brain-onboard` reads by default and writes nothing; asked to write the
+brief, it records it as a proposal and shows what changed against the confirmed version.
+`brain-import-pull-requests` is different again: its cards are
+recorded confirmed, because an import asserts only that a conversation happened, and only a project admin can
+remove one person's conversations from a project.
+`brain-seed` brings the three in together in one run, in that order, after one yes, asked before any document text or comment is collected: tasks and pull requests are recorded confirmed, and each document lands as a proposal for the review queue.
+`brain-impact` records nothing: its answer is a report, and
+`brain-new-requirement` calls it to ground its drafts. It follows the uses of code the platform
+has indexed, not the paths a request takes at run time, and its report says so on its first
+line. For what each skill sends to the platform, see
+[What leaves your machine](/coding/data-flow).
+
+<Note>
+They need [connected mode](/coding/connected-mode) — run `/fairmind-connect` once per
+checkout first. Standalone there is nothing to read from, so they stop and say so instead of
+degrading. They also need a platform release that serves the brain tools; when it does not,
+they name the release and stop.
+</Note>
+
+## Loading a skill deliberately
+
+Skills load on their own when the work matches the description in the table above — that is the point of writing the description carefully. To force one, name it in the request:
+
+```text
+Use the fairmind-gate skill to define the stop condition for this task
+```
+
+A skill announces itself when it loads, so you can tell which guidance is in play.

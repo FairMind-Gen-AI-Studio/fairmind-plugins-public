@@ -1,0 +1,72 @@
+---
+title: "Hooks"
+description: "The lifecycle hooks fairmind-coding installs: which event each fires on, what it enforces or records, and which ones can block a turn."
+keywords: ["hooks", "PreToolUse", "SubagentStart", "SubagentStop", "Stop", "SessionStart", "journal", "gate"]
+---
+
+Hooks are where the plugin stops being advice and starts being enforcement. They fire at Claude Code lifecycle points, and three of them can refuse to let work proceed.
+
+## What can block
+
+| Hook | Event | Can block |
+|---|---|---|
+| `validate-fairmind-path` | `PreToolUse` on `Write` and `Edit` | Yes — refuses the write, including when it cannot check one |
+| `check-journal` | `SubagentStop` | Yes — refuses the subagent's completion |
+| `loop-check` | `Stop` | Yes — blocks the turn while a loop is short of its stop condition |
+| `inject-context` | `PreToolUse` on `Task` (its delivery, on `SubagentStart`, cannot block) | Yes — refuses the dispatch when it cannot read the workspace |
+
+Every other hook is best-effort and never blocking.
+
+<Note>
+`inject-context` blocks only where it would otherwise dispatch a subagent that does not know its scoped path — a missing `jq`, or an `active-context.json` it cannot parse. Outside a Fairmind workspace it is a silent no-op. See [Requirements](/requirements).
+</Note>
+
+## Enforcement
+
+### validate-fairmind-path
+
+Fires before every `Write` and `Edit`. Refuses writes to `.fairmind/` paths outside the scope that `active-context.json` declares in its `base_path`, and refuses any path carrying a `..` segment. This is what makes the [workspace contract](/coding/overview#the-workspace-contract) a contract rather than a convention.
+
+It also refuses a write it **cannot check** — a missing `jq`, or a payload it cannot parse — rather than letting it through unchecked. Inside a workspace with no `jq`, that means editing stops. See [Requirements](/requirements).
+
+### check-journal
+
+Fires when a subagent finishes. If the subagent mutated code outside `.fairmind/` and wrote no development journal, its completion is refused. The rule keys on behavior — did this agent change code? — rather than on a fixed list of roles, so a new agent inherits the requirement automatically.
+
+### loop-check
+
+Fires on every stop. Outside [loop mode](/coding/loop-mode) it is a silent no-op. Inside one it runs the executed gate: not green with budget left blocks the turn and routes the failure back to the maker; all green K consecutive times closes the loop to `passed_pending_human`.
+
+## Context delivery
+
+### inject-context
+
+Fires as each subagent starts and hands it `FAIRMIND_BASE`, `project_id`, and `session_mindstreamId`, so it can resolve the workspace without rediscovering it. It adds this as context; it does not rewrite the call that dispatched the subagent. Before the dispatch it only checks that the context can be read: inside a workspace it **refuses** the dispatch rather than proceeding blind when `jq` is absent or `active-context.json` will not parse.
+
+## Recording
+
+### trace-op
+
+Fires after every tool call and appends the mechanical *what* of it — classified as mutate, exec, dispatch, read, or other — to `.fairmind/trace/<taskRef>.jsonl`. A silent no-op outside a Fairmind workspace.
+
+### capture-subagent-tokens and capture-orchestrator-tokens
+
+`capture-subagent-tokens` fires on `SubagentStop` and sums a finished subagent's token usage into a per-loop ledger, so the loop dashboard can report token stats per run. `capture-orchestrator-tokens` is its counterpart on `Stop`: the main thread never fires `SubagentStop`, so its own usage would otherwise go uncounted. Both are best-effort and never blocking.
+
+### session-start-insights and session-end-insights
+
+`session-start-insights` is the gate for the ambient capture lane, re-evaluated fresh every session. It consults three things in order — whether this repository has a per-project Fairmind MCP configured, then the central plugin policy, then `.fairmind-insights.json` — and where capture is on it registers the session, shows the one-time notice, and spawns one detached background pass. It runs with a five-second timeout and never blocks the session.
+
+<Warning>
+Do not infer the outcome from any one of those three layers. Each can decline, but none of them being present is not the same as capture being off — the layers do not all default the same way. `/fairmind-config` reports the effective state and which layer decided it, and it is the only answer that accounts for all three.
+</Warning>
+
+`session-end-insights` stamps the end marker on that session's row, and is a no-op for a session that never captured.
+
+<Note>
+This pair gates the **ambient** lane only. It is one of the routes by which records can leave the machine, and what each route sends is covered in [What leaves your machine](/coding/data-flow).
+</Note>
+
+## Where the full mechanics live
+
+The hook table above is the operating summary. `INTERNALS.md`, installed alongside the plugin in its own directory, carries the exact decisions — ledger keying and migration rules, the criteria hook's size cap and reset semantics, and the memo layout.

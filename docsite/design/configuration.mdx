@@ -1,0 +1,38 @@
+---
+title: "Configuration"
+description: "The project files fairmind-design reads: the design-system source of truth, the token catalog, and the rules the compliance checker verifies."
+keywords: ["configuration", "DESIGN.md", "CLAUDE.md", "design tokens", "tailwind"]
+---
+
+The plugin reads project-level configuration from four places. None of them is created by installing it — the plugin verifies against what your project already declares.
+
+| Path | Role |
+|---|---|
+| `DESIGN.md` | The design system's source of truth |
+| `CLAUDE.md`, root and subfolders | Invocation rules and quality gates — what the compliance checker verifies against |
+| `styles/primitives.css`, `styles/semantic.css` | The token catalog |
+| `tailwind.config.js` | Tailwind utility mapping, where present |
+
+## Bootstrapping a project
+
+Start from the template the `fairmind-design-claude-md` skill ships:
+
+```text
+templates/CLAUDE.md.example
+```
+
+Copy it to the project root and edit it to match the design system. The compliance checker reads that file: a rule that is not written there cannot be enforced, and a workflow that skipped a mandatory agent is only detectable because the file said the agent was mandatory.
+
+## The primitive and semantic split
+
+`styles/primitives.css` holds raw values; `styles/semantic.css` maps them to roles. Components reference the semantic layer, never the primitive one — which is what lets a theme change without touching a component.
+
+`fairmind-token-analyzer` flags a component reaching past the semantic layer, and `design-token-conventions` is the written rule it applies.
+
+## When a rule keeps getting flagged
+
+A compliance finding that will not go away usually means the rule exists in someone's head rather than in `CLAUDE.md`. Write it down, then re-run:
+
+```text
+/design-task-close
+```

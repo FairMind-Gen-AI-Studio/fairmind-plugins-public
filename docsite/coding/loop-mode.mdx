@@ -1,0 +1,131 @@
+---
+title: "Loop mode"
+description: "An opt-in mode where an executed gate, not a prompt, decides when a coding task is done: five check types, RED-first authoring by someone other than the maker, admission, and a final human gate."
+keywords: ["loop mode", "gate", "stop condition", "acceptance criteria", "admission", "maker checker"]
+---
+
+Interactive Claude Code is human-driven: you judge each turn. **Loop mode** replaces "prompt every turn" with an objective, machine-verifiable stop condition, and lets an *executed* gate drive implement → verify → iterate under a budget you confirm.
+
+It is opt-in. Start it with [`/fairmind-loop`](/coding/commands#fairmind-loop), which records `mode: "loop"` in `.fairmind/active-context.json`. Interactive mode is unchanged.
+
+```text
+/fairmind-loop FM-1234
+```
+
+<Info>
+A **check** is a measurable predicate the harness can evaluate — not "a QA test". The distinction is what the gate is aiming at: a check written against the behaviour a criterion names, rather than against the shape of the code that delivers it, survives the refactors the loop itself will perform.
+</Info>
+
+## The contract
+
+<Steps>
+  <Step title="Classify every acceptance criterion">
+    The Technical Lead sorts each criterion into one of the five check types below — `evidence` being the one for a judgement that cannot be automated. Anything none of the five cover becomes a `custom` check. The Technical Lead writes the descriptor into `${FAIRMIND_BASE}/loop-state.json` and never writes check code.
+  </Step>
+  <Step title="Capture baselines">
+    Reduce-and-improve goals get a baseline frozen on a clean committed ref, in an isolated worktree. It serves as both target and regression guard for the run.
+  </Step>
+  <Step title="Author the checks RED-first, by someone other than the maker">
+    The check for a criterion is authored by an agent other than the one who will implement it: the QA Engineer for `functional` and `evidence`, the Code Reviewer for `metric` and `performance`. Every check must actually fail on the pre-fix code — so authoring happens while the code is still red.
+  </Step>
+  <Step title="Admit — verify the verifier">
+    `admit_check.py` runs the mandatory gates before a check is allowed to gate anything: maker ≠ checker, clean signal, live RED-first, and a determinism probe. Checks that fail are quarantined and excluded from the stop condition.
+  </Step>
+  <Step title="Arm, with a budget you confirmed">
+    The loop arms only through the engine's own verb, `run_gate_checks.py --arm` — never by hand-editing state. It refuses a loop that has no admitted check to gate on.
+  </Step>
+</Steps>
+
+## The five check types
+
+| Type | Asserts | Signal | Authored by | Baseline |
+|---|---|---|---|---|
+| `functional` | A behavior or acceptance criterion holds | Test runner exit code or JSON count | QA Engineer | No |
+| `metric` | A number crosses a threshold — lines of code, complexity, coverage, bundle size | `measure_metric.py` | Code Reviewer | Yes |
+| `performance` | A latency statistic stays under a bound, such as p95 below N ms | `bench_runner.js` | Code Reviewer | Yes |
+| `static` | An analyzer is clean — Sonar issues at zero, lint clean | `sonar_gate.py` | Code Reviewer | No |
+| `evidence` | A judgement that cannot be automated, such as layout matching a mockup | Verdict artifact from an agent other than the maker | Verifier ≠ maker | No |
+
+A criterion none of the five cover gets a `custom` check under the same descriptor contract, authored through [`/fairmind-add-check`](/coding/commands#fairmind-add-check).
+
+## The four principles the engine enforces
+
+<AccordionGroup>
+  <Accordion title="maker ≠ checker" icon="users">
+    The check's `source.authored_by` must differ from the criterion's `owner`. This is structural, not advisory: a self-authored check yields ERROR and can never be green.
+  </Accordion>
+  <Accordion title="RED-first, proven live" icon="flask-conical">
+    Every check must fail on the current code at the moment admission runs it. The proof is a live probe, never a claim — `admit_check.py` writes `source.red_first_proof` itself from what it observed. Nobody hand-authors that field.
+  </Accordion>
+  <Accordion title="Clean signal" icon="signal">
+    `signal.on_missing` must be `error` or `fail`. The absence of a result is never read as a pass: a network blip, a crashed runner, or a stale report yields ERROR, not green.
+  </Accordion>
+  <Accordion title="Confirmation-gated stop" icon="check-check">
+    The checks are never satisfied by fewer than K consecutive green evaluations, and the engine floors K at 3. The asymmetry is deliberate: a false green ships something as "proven", while a false red costs one wasted iteration. Reaching K is necessary, not sufficient — see [the second exit check](#the-second-exit-check-completeness).
+  </Accordion>
+</AccordionGroup>
+
+## How the gate evaluates
+
+The `loop-check` Stop hook fires `run_gate_checks.py` on every stop. Per evaluation, the engine runs each admitted check `determinism.runs` times, extracts the signal, applies the predicate and any regression guard, reads evidence verdicts, and yields one verdict per check: `green`, `red`, `error`, or `inconclusive`.
+
+- **All green** — `confirmations` increments. A confirmation turn spends no iteration budget, so a green run can always reach K without being starved.
+- **Anything else** — `confirmations` resets to zero, the evaluation consumes one iteration of budget, and the turn is blocked with routed feedback telling the maker what failed.
+
+A check that never cleared admission evaluates as ERROR. A forgotten check therefore cannot be silently absent from the stop condition.
+
+## The second exit check: completeness
+
+Reaching K greens does not close a loop. The engine then asks a question the checks cannot ask themselves, and holds the loop at `running` until it is answered.
+
+The reason is that the checks are **compiled from the task's criteria**, so when the criteria are wrong the checks are wrong with them — in the same direction, and green. A loop whose only completeness signal is its own checks rewards writing nothing more.
+
+So a reviewer who **owns no check in the contract** records a verdict with `run_gate_checks.py --record-completeness`, judged against the **design brief** rather than the contract: *does the diff implement every decision in that brief, at the layer it named?* While the verdict is outstanding the streak stays frozen at K, no budget is spent, and the turn is routed to that reviewer. `--arm` refuses a loop that has no brief for them to read.
+
+<Warning>
+What the engine proves here is narrower than "the review was good": that a verdict was recorded, by a non-maker role, against a harness-written attestation, for the tree that is actually there. It cannot prove the reviewer reasoned well, and the attestation is a file under `.fairmind/` a session could write. The `fairmind-gate` skill states the residuals in full.
+</Warning>
+
+## Where a loop can end
+
+`passed_pending_human` is the one succeeding state. Every other terminal state is a fail-closed stop:
+
+| Status | Meaning |
+|---|---|
+| `passed_pending_human` | K consecutive greens **and** a recorded completeness verdict. Waiting on the human gate |
+| `blocked_budget` | Iteration budget spent |
+| `blocked_failures` | Consecutive-failure cap hit |
+| `blocked_timeout` | Wall-clock deadline reached |
+| `blocked_no_checks` | Nothing admitted left to gate on |
+| `blocked_scope` | The work escaped the paths the contract allows |
+| `blocked_worktree` | The gate could not resolve the tree the maker wrote |
+| `blocked_recovered` | A human ended the loop with `--recover` |
+
+## Portability
+
+No sandbox is required. Hermeticity is tiered: **Tier A** wraps each check in `srt` with the network denied when `srt` is present; otherwise **Tier B** applies a determinism probe and reports the checks as `hermeticity-unverified`. The distinction is recorded rather than hidden.
+
+## The two human touchpoints
+
+Loop mode never removes the human — it moves the human to the two points that decide something.
+
+1. **The budget, before arming.** The Technical Lead proposes iterations, a consecutive-failure cap, and a timeout. The loop does not arm until you confirm them.
+2. **The final gate, after `passed_pending_human`.** You review the report and decide. There is no auto-merge and no auto-deploy.
+
+The completeness verdict sits between them and is not a third human touchpoint of yours: it is recorded by a reviewer role inside the loop. It raises what reaches you; it does not replace your reading of it.
+
+## Inspecting a loop without changing it
+
+`run_gate_checks.py --dry-run` re-evaluates the checks and reports, without mutating loop state. Use it whenever you need to know where a loop stands but must not spend budget or advance the confirmation count.
+
+<Warning>
+Arming, closing, and recovering are the engine's verbs. Hand-editing `loop-state.json` to change `status` or `confirmations` bypasses the guards that make the result meaningful — a seeded confirmation count clears every admission gate while encoding the exact defect under test.
+</Warning>
+
+## Bringing in an external ticket
+
+[`/loop-import`](/coding/commands#loop-import) takes a GitHub issue, a ticket file, or an exported task, classifies its acceptance criteria into check types with the `task-compilation` skill, compiles the contract, and reports the gaps — the criteria it could not make machine-checkable, each with a suggested rewrite. It then hands off to `/fairmind-loop` to arm.
+
+## Going deeper
+
+The `fairmind-gate` skill carries the descriptor contract, the worked examples for each check type, and the craft rules the engine cannot enforce — among them *assert the artifact, not the mention*: a check that greps for a label passes on code that mentions the label while doing the wrong thing.

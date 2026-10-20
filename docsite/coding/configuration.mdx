@@ -1,0 +1,73 @@
+---
+title: "Configuration"
+description: "The files fairmind-coding reads, the repository policy file, and how the central platform policy composes with your local choice."
+keywords: ["configuration", "fairmind-insights.json", "fairmind-config", "policy", "active-context.json"]
+---
+
+The plugin reads project-level configuration from a small, fixed set of files. None of them is created by installing the plugin.
+
+## Files the plugin reads
+
+| Path | Purpose |
+|---|---|
+| `.fairmind/active-context.json` | The workspace contract — created by the Technical Lead, consumed by every agent and hook |
+| `.fairmind-insights.json` | The repository's plugin policy — the committable file governing ambient capture |
+| `./issues/*.md` | Input for `/fix-issue` and `/fix-frontend-issue`, image attachments included |
+| `./.claude/directive/*.md` | Optional project-specific directives for `/fix-frontend-issue`. A `*.example` file is ignored |
+| `sonar-project.properties` | Required by `/sonarqube-fix`, alongside the `SONAR_TOKEN` environment variable |
+
+## The policy file
+
+`.fairmind-insights.json` at the repository root governs the ambient capture lane. It is meant to be committed — it records a decision about the repository, not about one developer's machine.
+
+The keys do not all default the same way, so the file's **absence** answers differently per feature. Do not reason about the file — ask the plugin:
+
+```text
+/fairmind-config
+```
+
+It reports, per feature, the effective state and which layer decided it.
+
+<Warning>
+An absent `.fairmind-insights.json` does **not** mean nothing is captured. Whether a lane runs is decided by more than this file — the `SessionStart` gate and the central policy both come first. Read the state the command reports, not the file.
+</Warning>
+
+## Changing the policy
+
+`/fairmind-config` is the safe writer. Use it rather than editing the file by hand.
+
+```text
+/fairmind-config                    # report the effective state
+/fairmind-config ambient off        # write the local choice
+/fairmind-config brain off          # the same, for the brain write-back
+/fairmind-config ambient unset      # clear it, deferring to the layer above
+```
+
+With no argument it reports, per feature, the effective state, which layer decided it — centrally forced, repository file, or default — and how fresh the policy cache is.
+
+It refuses two things, leaving the file byte-identical rather than half-written:
+
+- A feature the platform has centrally forced.
+- A file that is not a JSON object.
+## The central policy layer
+
+A Fairmind project can set a feature centrally, and a central setting always wins over the local choice. Four features are in that perimeter and no others: `ambient_capture`, `brain`, and the two grants that raise what captured content may be used for.
+
+**What "unset" means splits the perimeter in two**, so read the row you care about:
+
+| Feature | Centrally unset means |
+|---|---|
+| `ambient_capture`, `brain` | The decision falls to your repository file, then to the default |
+| The two `purpose` grants | Ungranted. There is **no local fallback** |
+
+The grants have no local fallback deliberately: a contractual use right should not be something anyone who can edit a file in the repository can grant themselves. `/fairmind-config` does not write them for the same reason.
+
+### How the policy is fetched
+
+Fetching the central policy is itself an outbound request, and the plugin README describes it precisely — what it carries, how often, and the conditions under which it does not happen at all. That account is not repeated here; `/fairmind-config` reports how fresh the cached answer is.
+
+What is worth knowing on this page is the part resolved **on your machine**: which project's policy applies is decided locally, first from the project claim carried by the MCP entry's own credential, then from the project named in `.fairmind/active-context.json`. Where neither names a project, only a company-wide default can apply.
+
+<Note>
+The precise account of what each route sends and when — including the exact wording of the consent rule, which is deliberately kept in one place — is in the plugin's own README, installed with the plugin. See [What leaves your machine](/coding/data-flow).
+</Note>
