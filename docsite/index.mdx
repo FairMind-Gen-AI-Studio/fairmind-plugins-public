@@ -1,0 +1,48 @@
+---
+title: "Fairmind plugins"
+description: "A Claude Code plugin marketplace with two independent plugins: a design and accessibility toolkit, and a coding workflow with role-based agents and an executed gate."
+keywords: ["claude code", "plugin", "marketplace", "fairmind", "agents", "accessibility", "loop mode"]
+---
+
+Fairmind ships two Claude Code plugins from one marketplace. Each is scoped to a different stage of the product lifecycle, and the two are independent: install one, the other, or both.
+
+<Columns cols={2}>
+  <Card title="fairmind-coding" icon="workflow" href="/coding/overview">
+    Six role-based agents, a skill library, lifecycle hooks, and 19 commands. Includes loop mode, where an executed gate decides when the work is done. Runs standalone on any repository.
+  </Card>
+  <Card title="fairmind-design" icon="palette" href="/design/overview">
+    Ten subagents for design-to-code verification, design-token auditing, Figma Code Connect, and WCAG 2.1 AA accessibility audits. Most need the Figma or Playwright MCP server; three need neither.
+  </Card>
+</Columns>
+
+## Which one do you need
+
+| You want to | Use |
+|---|---|
+| Drive a coding task to a machine-checkable stop condition | [Loop mode](/coding/loop-mode) in `fairmind-coding` |
+| Implement a story with a team of agents under your control | [`/fairmind-develop`](/coding/commands#fairmind-develop) |
+| Score how ready a repository is for agent-driven work | [`/harness-audit`](/coding/commands#harness-audit) |
+| Check a React component against its Figma source | [`/design-verify`](/design/commands#design-verify) |
+| Run a full accessibility audit on a component or page | [`/a11y-audit`](/design/commands#a11y-audit) |
+
+## Install
+
+```text
+/plugin marketplace add FairMind-Gen-AI-Studio/fairmind-plugins-public
+/plugin install fairmind-coding@fairmind-plugins
+/plugin install fairmind-design@fairmind-plugins
+```
+
+Full instructions, including local-checkout installs and how to verify: [Installation](/installation).
+
+## What each plugin assumes
+
+`fairmind-coding` runs with zero MCP servers. `python3`, `git`, and `bash` get you the gate engine and the hooks, which are stdlib-only; add `jq` before you open a `.fairmind/` workspace, where three hooks refuse rather than skip without it. The Fairmind MCP is what opens [connected mode](/coding/connected-mode); Playwright and MongoDB are separate optional servers that each enable their own workflows.
+
+`fairmind-design` depends on MCP per workflow rather than as a whole: an agent whose server is absent fails at its first call, but the token analyzer, composition reviewer, and compliance checker make no MCP call and run on any machine.
+
+See [Requirements](/requirements) for the full list.
+
+<Note>
+The two plugins share a marketplace, not a design. Their agents, commands, and skills are deliberately not coupled — a change to one never moves the other.
+</Note>

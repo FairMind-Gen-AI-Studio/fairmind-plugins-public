@@ -1,0 +1,102 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "maple",
+  "name": "Fairmind plugins",
+  "description": "Claude Code plugin marketplace by Fairmind: a design and accessibility toolkit, and a coding workflow with role-based agents and an executed gate.",
+  "colors": {
+    "primary": "#8F670E",
+    "light": "#E8B33C",
+    "dark": "#A6802B"
+  },
+  "icons": {
+    "library": "lucide"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Get started",
+        "icon": "rocket",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": [
+              "index",
+              "installation",
+              "requirements"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "fairmind-coding",
+        "icon": "workflow",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "coding/overview",
+              "coding/loop-mode"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "coding/commands",
+              "coding/agents",
+              "coding/skills",
+              "coding/hooks"
+            ]
+          },
+          {
+            "group": "Operating the plugin",
+            "pages": [
+              "coding/connected-mode",
+              "coding/configuration",
+              "coding/data-flow"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "fairmind-design",
+        "icon": "palette",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "design/overview"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "design/commands",
+              "design/agents",
+              "design/skills"
+            ]
+          },
+          {
+            "group": "Operating the plugin",
+            "pages": [
+              "design/configuration"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Repository",
+        "href": "https://github.com/FairMind-Gen-AI-Studio/fairmind-plugins-public"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/FairMind-Gen-AI-Studio/fairmind-plugins-public",
+      "website": "https://fairmind.ai"
+    }
+  }
+}

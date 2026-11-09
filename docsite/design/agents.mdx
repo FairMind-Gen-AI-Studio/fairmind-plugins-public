@@ -1,0 +1,45 @@
+---
+title: "Agents"
+description: "The ten subagents fairmind-design installs: six for design-to-code fidelity and four accessibility specialists behind an orchestrator."
+keywords: ["agents", "design verification", "token analyzer", "wcag", "contrast", "keyboard", "screen reader"]
+---
+
+Ten agents, in two families. Each is an ordinary Claude Code subagent — `/agents` lists them all once the plugin is installed.
+
+## Design fidelity
+
+| Agent | Purpose |
+|---|---|
+| `fairmind-design-verification` | Compares an implementation against its Figma source value by value, state by state. Flags hardcoded values and design-token drift |
+| `fairmind-component-composition-reviewer` | Structural review of composite components: design-system reuse, prop typing, HTML semantics |
+| `fairmind-figma-code-connect-generator` | Generates and maintains `.figma.tsx` mappings. Detects orphaned variants and dangling props |
+| `fairmind-token-analyzer` | Token coverage audit. Finds hardcoded values, suggests the closest semantic token, reports drift |
+| `fairmind-claude-md-compliance-checker` | The mandatory closing step. Verifies the workflow followed the project's declared rules |
+
+## Accessibility
+
+| Agent | Purpose |
+|---|---|
+| `fairmind-accessibility-orchestrator` | Coordinates the four specialists below and aggregates one deduplicated, severity-ranked report |
+| `fairmind-wcag-compliance-auditor` | WCAG 2.1 AA or AAA audit with axe-core through Playwright, plus manual-review notes for what automation cannot cover |
+| `fairmind-color-contrast-specialist` | Contrast against WCAG 1.4.3 for text and 1.4.11 for non-text UI, reading rendered values so opacity, gradients, and blur are caught |
+| `fairmind-keyboard-navigation-tester` | Tab order, focus visibility, modal focus traps, Escape behavior, documented shortcuts |
+| `fairmind-screen-reader-tester` | Accessible names, ARIA roles, live regions, image alt text, and DOM order against visual order |
+
+## Why contrast reads the rendered page
+
+The contrast specialist checks both the declared CSS tokens *and* the values the browser actually painted. A pair that passes in the token file can still fail on screen once an override, an opacity, a gradient, or a backdrop blur is applied — and the rendered value is the one a user sees.
+
+The same reasoning puts the keyboard and screen-reader specialists on a real browser rather than on the source.
+
+## Running the accessibility family
+
+Invoke the orchestrator rather than the four specialists individually — it deduplicates overlapping findings and ranks them, which four separate reports cannot do:
+
+```text
+/a11y-audit http://localhost:3000/dashboard
+```
+
+## The compliance checker is not optional
+
+`fairmind-claude-md-compliance-checker` closes every design task. It reviews **process conformance** — were the mandatory agents invoked, were the gates enforced, were the conventions followed — and it does not review code quality. The other agents cover the code.

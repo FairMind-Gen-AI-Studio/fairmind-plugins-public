@@ -1,0 +1,75 @@
+---
+title: "Installation"
+description: "Add the Fairmind marketplace to Claude Code, install either plugin, and verify that its agents and commands loaded."
+keywords: ["install", "plugin marketplace", "claude code", "verify", "update", "uninstall"]
+---
+
+Both plugins install through Claude Code's `/plugin` command. Adding the marketplace is a one-time step; after that you install, update, and remove each plugin independently.
+
+<Steps>
+  <Step title="Add the marketplace">
+    ```text
+    /plugin marketplace add FairMind-Gen-AI-Studio/fairmind-plugins-public
+    ```
+
+    This reads `.claude-plugin/marketplace.json` from the repository so Claude Code knows which plugins are available. Nothing is installed yet.
+
+  </Step>
+
+  <Step title="Install the plugins you want">
+    ```text
+    /plugin install fairmind-coding@fairmind-plugins
+    /plugin install fairmind-design@fairmind-plugins
+    ```
+
+    The `@fairmind-plugins` suffix disambiguates when several marketplaces are installed.
+  </Step>
+
+  <Step title="Verify">
+    ```text
+    /agents
+    /help
+    ```
+
+    `/agents` lists the plugin's agents: six for `fairmind-coding` (Technical Lead / Architect, Software Engineer, Code Reviewer, QA Engineer, Debugging Specialist, Security Engineer) and ten `fairmind-*` agents for `fairmind-design`.
+
+    `/help` lists the slash commands: `/fairmind-coding`, `/fairmind-loop`, `/harness-audit`, `/fix-issue` and the rest for coding; `/design-verify`, `/a11y-audit`, `/code-connect`, `/design-task-close` for design.
+
+    A missing entry here is an install problem, not a configuration one — `fairmind-coding` loads its agents and commands with no MCP server at all. Re-run the install, and check that the marketplace was added successfully.
+
+    `fairmind-design` is different: its agents all load, but the ones that need Figma or Playwright fail at their first call without it. Three of them need neither. See [Requirements](/requirements).
+  </Step>
+</Steps>
+
+## First run
+
+`fairmind-coding` has a front desk that menus the toolkit and launches whichever job you pick:
+
+```text
+/fairmind-coding
+```
+
+`fairmind-design` has no front desk — start from the command that matches your task, listed in [Commands](/design/commands).
+
+## Update an installed plugin
+
+A marketplace update refreshes the metadata; the update verb picks up the new plugin version.
+
+```text
+/plugin marketplace update fairmind-plugins
+/plugin update fairmind-coding@fairmind-plugins
+```
+
+<Warning>
+An update needs a restart before it takes effect. Until then the hooks that fire and the agents that load are the ones already in the installed cache, not the version you just fetched.
+</Warning>
+
+## Uninstall
+
+```text
+/plugin uninstall fairmind-coding@fairmind-plugins
+/plugin uninstall fairmind-design@fairmind-plugins
+/plugin marketplace remove fairmind-plugins
+```
+
+Removing the marketplace uninstalls every plugin that came from it.

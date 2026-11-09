@@ -1,0 +1,52 @@
+---
+title: "Agents"
+description: "The six role-based subagents fairmind-coding adds, what each one owns, and the boundaries the plugin enforces between them."
+keywords: ["agents", "subagents", "technical lead", "software engineer", "code reviewer", "qa engineer"]
+---
+
+The plugin installs six agents. Each has a remit, a journal, and — in loop mode — a defined side of the maker/checker line.
+
+| Agent | Role |
+|---|---|
+| Technical Lead / Architect | Bootstraps `.fairmind/<project>/<session>/`, pulls the work and the roadmap, writes the work packages, and returns the ordered plan for the command to dispatch. **Never implements code.** |
+| Software Engineer | The implementer, across frontend, backend, and AI work. Takes its conventions from the work package and from the code already in the repository. |
+| Code Reviewer | Post-implementation review against the plan, the journal, and the codebase's standards. |
+| QA Engineer | Test execution and validation. Playwright by default. |
+| Debugging Specialist | Methodical, hypothesis-driven root-cause investigation. |
+| Security Engineer | Web security review — OWASP, STRIDE, and CVSS-classified findings. |
+
+## Why the Technical Lead does not implement
+
+The Technical Lead returns a plan for the *command* to dispatch, rather than dispatching the work itself. That is not a stylistic choice: a subagent has no `Task` tool of its own, so a plan that assumes the Lead can spawn the team cannot execute. Keeping planning and implementation in separate agents also keeps the second-opinion property intact — the writer never approves their own work.
+
+## Roles in loop mode
+
+[Loop mode](/coding/loop-mode) enforces `maker ≠ checker` structurally, and the roles map onto it:
+
+| Check type | Maker | Author of the check |
+|---|---|---|
+| `functional`, `evidence` | Software Engineer | QA Engineer |
+| `metric`, `performance` | Software Engineer | Code Reviewer |
+| `static` | Software Engineer | Reused tooling — `sonar_gate.py` |
+
+A check whose author matches the criterion's owner yields ERROR and can never be green.
+
+## Journals
+
+Each agent writes a development journal under `${FAIRMIND_BASE}/journals/`. This is enforced rather than encouraged: the `check-journal` hook refuses a subagent's completion when it mutated code outside `.fairmind/` and wrote no journal. See [Hooks](/coding/hooks).
+
+The journal is not the loop's second exit check — the **design brief** is. Since the completeness gate landed, a loop holds at `running` until a reviewer who owns no check records a verdict against that brief. The `check-journal` hook is a separate and narrower guarantee: it enforces that a journal was *written*, never that its contents match anything.
+
+## Invoking an agent directly
+
+Agents are ordinary Claude Code subagents. Call one by name when you want its remit without a command's orchestration:
+
+```text
+Technical Lead, prepare the work package for user story FM-1234
+```
+
+```text
+Security Engineer, review the authentication middleware I just added
+```
+
+`/agents` lists all six once the plugin is installed.
